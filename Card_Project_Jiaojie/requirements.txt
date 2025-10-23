@@ -1,0 +1,30 @@
+# 计算机视觉和图像处理
+opencv-python>=4.5.0
+opencv-contrib-python>=4.5.0
+
+# 科学计算
+numpy>=1.19.0
+scipy>=1.7.0
+
+# 图像处理库
+scikit-image>=0.18.0
+Pillow>=8.0.0
+
+# 图形用户界面
+PyQt5>=5.15.0
+
+# 数据分析和处理
+pandas>=1.3.0
+
+# 机器学习相关
+scikit-learn>=1.0.0
+
+# 数学和统计
+matplotlib>=3.3.0
+
+# 系统相关
+uuid
+
+# 其他工具
+json5
+
