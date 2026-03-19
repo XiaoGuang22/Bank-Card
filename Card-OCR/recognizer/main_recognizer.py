@@ -248,7 +248,11 @@ class OCRApp:
         self.root.title("银行卡色带OCR识别系统")
         self.root.geometry("1400x900")
         
-        self.solutions_root = r"E:\Bank-Card\Card-OCR-v1\solutions"
+        # self.solutions_root = r"E:\Bank-Card\Card-OCR-v1\solutions"
+        # 使用相对路径，指向当前项目的solutions目录
+        current_dir = os.path.dirname(os.path.abspath(__file__))
+        parent_dir = os.path.dirname(current_dir)
+        self.solutions_root = os.path.join(parent_dir, "solutions")
         self.recognizer = BankCardRecognizer()
         
         self.image_path = None
