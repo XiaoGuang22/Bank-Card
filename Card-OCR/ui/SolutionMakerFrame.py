@@ -1043,6 +1043,24 @@ class SolutionMakerFrame(tk.Frame):
             command=self.clear_new_extraction
         )
         btn_clear_new.pack(fill=tk.X)
+        
+        # 第四行：批量删除（已注释，现在使用右键菜单进行批量删除）
+        # row4 = tk.Frame(frame, bg="#f0f0f0")
+        # row4.pack(fill=tk.X, pady=(5, 0))
+        # 
+        # btn_batch_delete = tk.Button(
+        #     row4,
+        #     text="🗑️ 批量删除模板",
+        #     font=("微软雅黑", 9),
+        #     bg="#e67e22",
+        #     fg="white",
+        #     relief=tk.FLAT,
+        #     padx=10,
+        #     pady=5,
+        #     cursor="hand2",
+        #     command=self.batch_delete_selected_templates
+        # )
+        # btn_batch_delete.pack(fill=tk.X)
     
     @ErrorHandler.handle_file_error
     def load_image_from_file(self):
@@ -2514,7 +2532,8 @@ class SolutionMakerFrame(tk.Frame):
         item_data = {
             'image': cv2_img,
             'type': section_type,
-            'is_new': is_new
+            'is_new': is_new,
+            'selected': False
         }
         
         # 创建卡片Frame
@@ -2522,7 +2541,7 @@ class SolutionMakerFrame(tk.Frame):
             parent_frame,
             bd=0,
             bg=bg_color,
-            highlightthickness=1,
+            highlightthickness=2,
             highlightbackground="#d0d0d0",
             width=self.card_width,
             height=80
@@ -2545,6 +2564,44 @@ class SolutionMakerFrame(tk.Frame):
         )
         btn_del.place(relx=1.0, x=0, y=0, anchor="ne", width=20, height=20)
         
+        # 添加点击事件
+        def on_frame_click(event):
+            # 切换选中状态
+            item_data['selected'] = not item_data['selected']
+            # 更新视觉反馈
+            if item_data['selected']:
+                frame.config(highlightbackground="#3498db", highlightcolor="#3498db")
+                frame.config(bg="#e3f2fd")
+                btn_del.config(bg="#e3f2fd")
+            else:
+                frame.config(highlightbackground="#d0d0d0", highlightcolor="#d0d0d0")
+                frame.config(bg="white")
+                btn_del.config(bg="white")
+        
+        # 右键菜单
+        def show_context_menu(event):
+            # 创建右键菜单
+            context_menu = tk.Menu(self, tearoff=0)
+            
+            # 添加删除选中项菜单
+            context_menu.add_command(
+                label="删除选中的模板",
+                command=self.batch_delete_selected_templates
+            )
+            
+            # 显示菜单
+            try:
+                context_menu.tk_popup(event.x_root, event.y_root)
+            finally:
+                context_menu.grab_release()
+        
+        # 绑定点击事件
+        frame.bind("<Button-1>", on_frame_click)
+        # 绑定右键事件
+        frame.bind("<Button-3>", show_context_menu)
+        # 确保点击事件不会被其他组件拦截
+        frame.bind_all("<Button-1>", lambda e: None, add="+")
+        
         # 字符图像
         img_pil = Image.fromarray(cv2_img)
         img_tk = ImageTk.PhotoImage(img_pil)
@@ -2563,6 +2620,23 @@ class SolutionMakerFrame(tk.Frame):
             highlightthickness=0
         )
         entry.pack(side=tk.BOTTOM, pady=(0, 10))
+        
+        # 限制输入一个字符并自动跳转到下一个输入框
+        def on_key_press(event):
+            # 只允许输入一个字符
+            current_text = entry.get()
+            if len(current_text) >= 1 and event.char.isalnum():
+                # 输入了第二个字符，阻止输入
+                return "break"
+            elif len(current_text) == 0 and event.char.isalnum():
+                # 输入了第一个字符，延迟一小段时间后自动跳转
+                def auto_focus():
+                    if len(entry.get()) == 1:
+                        self._focus_next(entry, section_type, target_key)
+                # 使用after确保字符已经输入
+                entry.after(100, auto_focus)
+        
+        entry.bind("<KeyPress>", on_key_press)
         entry.bind("<Return>", lambda e: self._focus_next(entry, section_type, target_key))
         
         if label_text:
@@ -2754,6 +2828,255 @@ class SolutionMakerFrame(tk.Frame):
             target_list.pop(target_index)
             self._reflow_grid()
             pass  # print removed
+    
+    def batch_delete_selected_templates(self):
+        """
+        批量删除选中的模板
+        
+        删除用户在界面上选中的模板
+        """
+        # 收集所有选中的模板
+        selected_templates = []
+        for section in self.char_widgets:
+            for item in self.char_widgets[section]['existing']:
+                if 'selected' in item and item['selected']:
+                    selected_templates.append((section, item))
+            for item in self.char_widgets[section]['new']:
+                if 'selected' in item and item['selected']:
+                    selected_templates.append((section, item))
+        
+        if not selected_templates:
+            messagebox.showinfo("提示", "请先在界面上选择要删除的模板")
+            return
+        
+        # 确认删除
+        confirm = messagebox.askyesno(
+            "确认删除",
+            f"确定要删除选中的 {len(selected_templates)} 个模板吗？\n\n此操作不可恢复！",
+            icon='warning'
+        )
+        
+        if not confirm:
+            return
+        
+        # 执行删除
+        deleted_count = 0
+        for section, item in selected_templates:
+            # 确定目标列表
+            target_list = self.char_widgets[section]['existing'] if not item['is_new'] else self.char_widgets[section]['new']
+            
+            # 从列表中删除
+            if item in target_list:
+                item['frame'].destroy()
+                target_list.remove(item)
+                deleted_count += 1
+        
+        # 刷新布局
+        self._reflow_grid()
+        
+        # 显示结果
+        if deleted_count > 0:
+            messagebox.showinfo("成功", f"成功删除 {deleted_count} 个模板！")
+        else:
+            messagebox.showinfo("提示", "没有删除任何模板")
+    
+    # ============================================================================
+    # 原来的批量删除模板方法（已注释，保留以供参考）
+    # ============================================================================
+    # def batch_delete_templates(self):
+    #     """
+    #     批量删除模板
+    #     
+    #     打开一个新窗口，显示所有已保存的模板，允许用户选择要删除的模板
+    #     """
+    #     # 收集所有已保存的模板
+    #     all_templates = []
+    #     for section in self.char_widgets:
+    #         for item in self.char_widgets[section]['existing']:
+    #             all_templates.append((section, item))
+    #     
+    #     if not all_templates:
+    #         messagebox.showinfo("提示", "当前没有已保存的模板")
+    #         return
+    #     
+    #     # 创建选择窗口
+    #     select_window = tk.Toplevel(self)
+    #     select_window.title("批量删除模板")
+    #     select_window.geometry("600x400")
+    #     select_window.resizable(True, True)
+    #     
+    #     # 创建滚动容器
+    #     canvas = tk.Canvas(select_window, bg="#f0f0f0")
+    #     scrollbar = tk.Scrollbar(select_window, orient="vertical", command=canvas.yview)
+    #     scrollable_frame = tk.Frame(canvas, bg="#f0f0f0")
+    #     
+    #     scrollable_frame.bind(
+    #         "<Configure>",
+    #         lambda e: canvas.configure(scrollregion=canvas.bbox("all"))
+    #     )
+    #     
+    #     canvas.create_window((0, 0), window=scrollable_frame, anchor="nw")
+    #     canvas.configure(yscrollcommand=scrollbar.set)
+    #     
+    #     canvas.pack(side="left", fill="both", expand=True)
+    #     scrollbar.pack(side="right", fill="y")
+    #     
+    #     # 存储选择状态
+    #     selected_items = []
+    #     check_vars = []
+    #     
+    #     # 显示模板列表
+    #     row = 0
+    #     col = 0
+    #     max_cols = 5
+    #     
+    #     for section, item in all_templates:
+    #         # 创建复选框和模板预览
+    #         frame = tk.Frame(scrollable_frame, bg="white", bd=1, relief=tk.SOLID, width=100, height=100)
+    #         frame.grid(row=row, column=col, padx=5, pady=5, sticky="nsew")
+    #         
+    #         # 复选框
+    #         var = tk.BooleanVar()
+    #         check_vars.append((var, section, item))
+    #         
+    #         checkbox = tk.Checkbutton(frame, variable=var, bg="white")
+    #         checkbox.place(x=5, y=5)
+    #         
+    #         # 模板图像
+    #         cv2_img = item['image']
+    #         img_pil = Image.fromarray(cv2_img)
+    #         img_tk = ImageTk.PhotoImage(img_pil)
+    #         lbl_img = tk.Label(frame, bg="white", image=img_tk)
+    #         lbl_img.image = img_tk
+    #         lbl_img.place(x=25, y=10, width=60, height=60)
+    #         
+    #         # 标签
+    #         label = item['entry'].get() if 'entry' in item else ""
+    #         lbl_text = tk.Label(frame, text=label, bg="white", font=("Arial", 10))
+    #         lbl_text.place(x=5, y=75, width=90, anchor="n")
+    #         
+    #         # 字段类型
+    #         lbl_section = tk.Label(frame, text=section, bg="white", font=("Arial", 8), fg="#666")
+    #         lbl_section.place(x=5, y=90, width=90, anchor="n")
+    #         
+    #         col += 1
+    #         if col >= max_cols:
+    #             col = 0
+    #             row += 1
+    #     
+    #     # 按钮区域
+    #     button_frame = tk.Frame(select_window, bg="#f0f0f0")
+    #     button_frame.pack(fill=tk.X, pady=10)
+    #     
+    #     def select_all():
+    #         for var, _, _ in check_vars:
+    #             var.set(True)
+    #     
+    #     def select_none():
+    #         for var, _, _ in check_vars:
+    #             var.set(False)
+    #     
+    #     def delete_selected():
+    #         # 收集要删除的项
+    #         to_delete = []
+    #         for var, section, item in check_vars:
+    #             if var.get():
+    #                 to_delete.append((section, item))
+    #         
+    #         if not to_delete:
+    #             messagebox.showinfo("提示", "请选择要删除的模板")
+    #             return
+    #         
+    #         # 确认删除
+    #         confirm = messagebox.askyesno(
+    #             "确认删除",
+    #             f"确定要删除选中的 {len(to_delete)} 个模板吗？\n\n此操作不可恢复！",
+    #             icon='warning'
+    #         )
+    #         
+    #         if not confirm:
+    #             return
+    #         
+    #         # 执行删除
+    #         deleted_count = 0
+    #         for section, item in to_delete:
+    #             # 从列表中删除
+    #             if item in self.char_widgets[section]['existing']:
+    #                 item['frame'].destroy()
+    #                 self.char_widgets[section]['existing'].remove(item)
+    #                 deleted_count += 1
+    #         
+    #         # 刷新布局
+    #         self._reflow_grid()
+    #         
+    #         # 关闭窗口
+    #         select_window.destroy()
+    #         
+    #         # 显示结果
+    #         if deleted_count > 0:
+    #             messagebox.showinfo("成功", f"成功删除 {deleted_count} 个模板！")
+    #         else:
+    #             messagebox.showinfo("提示", "没有删除任何模板")
+    #     
+    #     # 全选按钮
+    #     btn_select_all = tk.Button(
+    #         button_frame,
+    #         text="全选",
+    #         font=("微软雅黑", 9),
+    #         bg="#3498db",
+    #         fg="white",
+    #         relief=tk.FLAT,
+    #         padx=10,
+    #         pady=5,
+    #         cursor="hand2",
+    #         command=select_all
+    #     )
+    #     btn_select_all.pack(side=tk.LEFT, padx=(10, 5))
+    #     
+    #     # 全不选按钮
+    #     btn_select_none = tk.Button(
+    #         button_frame,
+    #         text="全不选",
+    #         font=("微软雅黑", 9),
+    #         bg="#95a5a6",
+    #         fg="white",
+    #         relief=tk.FLAT,
+    #         padx=10,
+    #         pady=5,
+    #         cursor="hand2",
+    #         command=select_none
+    #     )
+    #     btn_select_none.pack(side=tk.LEFT, padx=5)
+    #     
+    #     # 删除按钮
+    #     btn_delete = tk.Button(
+    #         button_frame,
+    #         text="删除选中",
+    #         font=("微软雅黑", 9),
+    #         bg="#e74c3c",
+    #         fg="white",
+    #         relief=tk.FLAT,
+    #         padx=10,
+    #         pady=5,
+    #         cursor="hand2",
+    #         command=delete_selected
+    #     )
+    #     btn_delete.pack(side=tk.RIGHT, padx=10)
+    #     
+    #     # 取消按钮
+    #     btn_cancel = tk.Button(
+    #         button_frame,
+    #         text="取消",
+    #         font=("微软雅黑", 9),
+    #         bg="#95a5a6",
+    #         fg="white",
+    #         relief=tk.FLAT,
+    #         padx=10,
+    #         pady=5,
+    #         cursor="hand2",
+    #         command=select_window.destroy
+    #     )
+    #     btn_cancel.pack(side=tk.RIGHT, padx=5)
     def reset_list(self):
         """
         还原列表

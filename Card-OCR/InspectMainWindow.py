@@ -469,9 +469,8 @@ class CameraController:
         
         # 使用 Sapera 的 Save 方法
         if self.buffers.Save(temp_path, "-format bmp"):
-            # 读取图像（使用支持中文路径的方法）
-            img_data = np.fromfile(temp_path, dtype=np.uint8)
-            img_np = cv2.imdecode(img_data, cv2.IMREAD_GRAYSCALE)
+            # 读取图像
+            img_np = cv2.imread(temp_path, cv2.IMREAD_GRAYSCALE)
             
             # 删除临时文件
             safe_call(os.unlink, temp_path)

@@ -31,11 +31,11 @@ CAMERA_DEFAULT_PARAMS = {
 USER_SENSOR_SETTINGS = {
     'trigger_mode': 'internal',     # 触发模式: internal/hardware/software
     'interval_ms': 1084,            # 内部定时间隔（毫秒）
-    'delay_ms': 0,                  # 检测触发延时（毫秒）
+    # 'delay_ms': 0,                  # 检测触发延时（毫秒）
     'delay_enabled': False,         # 是否启用延时
-    'strobe_enabled': False,        # 是否启用频闪（硬件不支持，保持禁用）
-    'strobe_duration_ms': 64.0,     # 频闪持续时间（毫秒）
-    'strobe_offset_us': 1000,       # 频闪偏置（微秒）
+    # 'strobe_enabled': False,        # 是否启用频闪（硬件不支持，保持禁用）
+    # 'strobe_duration_ms': 64.0,     # 频闪持续时间（毫秒）
+    # 'strobe_offset_us': 1000,       # 频闪偏置（微秒）
     'exposure_ms': 25.0,            # 曝光时间（毫秒）
     'brightness': 50,               # 亮度（0-100%）
     'contrast': 50,                 # 对比度（0-100%）
