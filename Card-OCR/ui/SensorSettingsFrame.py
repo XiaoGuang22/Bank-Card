@@ -83,8 +83,8 @@ class SensorSettingsFrame(tk.Frame):
         # 绑定点击事件，刷新状态
         ttk.Radiobutton(f_trig_opts, text="内部定时", variable=self.var_trig, value="internal", 
                         style="White.TRadiobutton", command=self._refresh_states).pack(side=tk.LEFT)
-        ttk.Radiobutton(f_trig_opts, text="检测触发", variable=self.var_trig, value="hardware", 
-                        style="White.TRadiobutton", command=self._refresh_states).pack(side=tk.LEFT, padx=10)
+        # ttk.Radiobutton(f_trig_opts, text="检测触发", variable=self.var_trig, value="hardware", 
+                        # style="White.TRadiobutton", command=self._refresh_states).pack(side=tk.LEFT, padx=10)
         ttk.Radiobutton(f_trig_opts, text="软件触发", variable=self.var_trig, value="software", 
                         style="White.TRadiobutton", command=self._refresh_states).pack(side=tk.LEFT)
         
@@ -121,53 +121,53 @@ class SensorSettingsFrame(tk.Frame):
         self.btn_software_trigger.pack(fill=tk.X, pady=(10, 5), padx=5)
 
         # === 3. 检测触发延时 ===
-        lf_delay = ttk.LabelFrame(self, text="检测触发延时", style="White.TLabelframe")
-        lf_delay.pack(fill=tk.X, pady=SECTION_PADY)
+        # lf_delay = ttk.LabelFrame(self, text="检测触发延时", style="White.TLabelframe")
+        # lf_delay.pack(fill=tk.X, pady=SECTION_PADY)
         
         # 说明文字
-        delay_help = tk.Label(
-            lf_delay,
-            text="如果在检测触发信号和物件到达相机视野内之间有一个延时或者偏置，使用滑杆设置时间延时。",
-            bg="white",
-            fg="#666666",
-            font=("Microsoft YaHei UI", 8),
-            wraplength=300,
-            justify=tk.LEFT
-        )
-        delay_help.pack(anchor="w", pady=(5, 10), padx=5)
+        # delay_help = tk.Label(
+        #     lf_delay,
+        #     text="如果在检测触发信号和物件到达相机视野内之间有一个延时或者偏置，使用滑杆设置时间延时。",
+        #     bg="white",
+        #     fg="#666666",
+        #     font=("Microsoft YaHei UI", 8),
+        #     wraplength=300,
+        #     justify=tk.LEFT
+        # )
+        # delay_help.pack(anchor="w", pady=(5, 10), padx=5)
         
         # 保存复选框引用
-        self.var_delay_check = tk.IntVar(value=0)
-        self.cb_delay = ttk.Checkbutton(lf_delay, variable=self.var_delay_check, style="White.TCheckbutton")
-        self.cb_delay.place(relx=1.0, x=-10, y=-22, anchor="ne")
+        # self.var_delay_check = tk.IntVar(value=0)
+        # self.cb_delay = ttk.Checkbutton(lf_delay, variable=self.var_delay_check, style="White.TCheckbutton")
+        # self.cb_delay.place(relx=1.0, x=-10, y=-22, anchor="ne")
         
-        self.slider_delay = self._create_slider(lf_delay, 0, 1500, unit="毫秒", precision=0, resolution=1)
+        # self.slider_delay = self._create_slider(lf_delay, 0, 1500, unit="毫秒", precision=0, resolution=1)
 
         # === 4. 频闪/输出脉冲 ===
-        lf_strobe = ttk.LabelFrame(self, text="频闪/输出脉冲", style="White.TLabelframe")
-        lf_strobe.pack(fill=tk.X, pady=SECTION_PADY)
+        # lf_strobe = ttk.LabelFrame(self, text="频闪/输出脉冲", style="White.TLabelframe")
+        # lf_strobe.pack(fill=tk.X, pady=SECTION_PADY)
         
         # ★★★ 修改点1：绑定变量并设置 command 回调 ★★★
-        self.var_strobe_check = tk.IntVar(value=0) # 0=未打钩
-        self.cb_strobe = ttk.Checkbutton(lf_strobe, variable=self.var_strobe_check, 
-                                         style="White.TCheckbutton", 
-                                         command=self._refresh_states) # 点击时刷新状态
-        self.cb_strobe.place(relx=1.0, x=-10, y=-22, anchor="ne")
+        # self.var_strobe_check = tk.IntVar(value=0) # 0=未打钩
+        # self.cb_strobe = ttk.Checkbutton(lf_strobe, variable=self.var_strobe_check, 
+        #                                  style="White.TCheckbutton", 
+        #                                  command=self._refresh_states) # 点击时刷新状态
+        # self.cb_strobe.place(relx=1.0, x=-10, y=-22, anchor="ne")
         
-        f_strobe_inner = tk.Frame(lf_strobe, bg="white")
-        f_strobe_inner.pack(fill=tk.X, pady=5)
-        f_strobe_inner.grid_columnconfigure(0, weight=1)
-        f_strobe_inner.grid_columnconfigure(1, weight=1)
+        # f_strobe_inner = tk.Frame(lf_strobe, bg="white")
+        # f_strobe_inner.pack(fill=tk.X, pady=5)
+        # f_strobe_inner.grid_columnconfigure(0, weight=1)
+        # f_strobe_inner.grid_columnconfigure(1, weight=1)
         
-        f_dur = tk.Frame(f_strobe_inner, bg="white")
-        f_dur.grid(row=0, column=0, sticky="ew", padx=(0, 5))
-        tk.Label(f_dur, text="持续时间", bg="white", font=("Microsoft YaHei UI", 9)).pack(anchor="w")
-        self.slider_strobe_dur = self._create_mini_slider(f_dur, 0.1, 128.0, unit="毫秒", precision=1, resolution=0.1)
+        # f_dur = tk.Frame(f_strobe_inner, bg="white")
+        # f_dur.grid(row=0, column=0, sticky="ew", padx=(0, 5))
+        # tk.Label(f_dur, text="持续时间", bg="white", font=("Microsoft YaHei UI", 9)).pack(anchor="w")
+        # self.slider_strobe_dur = self._create_mini_slider(f_dur, 0.1, 128.0, unit="毫秒", precision=1, resolution=0.1)
 
-        f_off = tk.Frame(f_strobe_inner, bg="white")
-        f_off.grid(row=0, column=1, sticky="ew", padx=(5, 0))
-        tk.Label(f_off, text="偏置", bg="white", font=("Microsoft YaHei UI", 9)).pack(anchor="w")
-        self.slider_strobe_off = self._create_mini_slider(f_off, 0, 2000, unit="微秒", precision=0, resolution=1)
+        # f_off = tk.Frame(f_strobe_inner, bg="white")
+        # f_off.grid(row=0, column=1, sticky="ew", padx=(5, 0))
+        # tk.Label(f_off, text="偏置", bg="white", font=("Microsoft YaHei UI", 9)).pack(anchor="w")
+        # self.slider_strobe_off = self._create_mini_slider(f_off, 0, 2000, unit="微秒", precision=0, resolution=1)
 
         # === 5. 传感器曝光 ===
         lf_exp = ttk.LabelFrame(self, text="传感器曝光", style="White.TLabelframe")
@@ -246,14 +246,14 @@ class SensorSettingsFrame(tk.Frame):
         # 加载时间间隔
         safe_call(self.slider_interval.set, settings.get('interval_ms', 1084))
         
-        # 加载延时设置
-        safe_call(self.var_delay_check.set, 1 if settings.get('delay_enabled', False) else 0)
-        safe_call(self.slider_delay.set, settings.get('delay_ms', 0))
+        # # 加载延时设置
+        # safe_call(self.var_delay_check.set, 1 if settings.get('delay_enabled', False) else 0)
+        # safe_call(self.slider_delay.set, settings.get('delay_ms', 0))
         
-        # 加载频闪设置
-        safe_call(self.var_strobe_check.set, 1 if settings.get('strobe_enabled', False) else 0)
-        safe_call(self.slider_strobe_dur.set, settings.get('strobe_duration_ms', 64.0))
-        safe_call(self.slider_strobe_off.set, settings.get('strobe_offset_us', 1000))
+        # # 加载频闪设置
+        # safe_call(self.var_strobe_check.set, 1 if settings.get('strobe_enabled', False) else 0)
+        # safe_call(self.slider_strobe_dur.set, settings.get('strobe_duration_ms', 64.0))
+        # safe_call(self.slider_strobe_off.set, settings.get('strobe_offset_us', 1000))
         
         # 加载曝光时间
         safe_call(self.slider_exposure.set, settings.get('exposure_ms', 25.0))
@@ -268,11 +268,11 @@ class SensorSettingsFrame(tk.Frame):
         settings = {
             'trigger_mode': self.var_trig.get(),
             'interval_ms': self.slider_interval.get(),
-            'delay_ms': self.slider_delay.get(),
-            'delay_enabled': self.var_delay_check.get() == 1,
-            'strobe_enabled': self.var_strobe_check.get() == 1,
-            'strobe_duration_ms': self.slider_strobe_dur.get(),
-            'strobe_offset_us': self.slider_strobe_off.get(),
+            # 'delay_ms': self.slider_delay.get(),
+            # 'delay_enabled': self.var_delay_check.get() == 1,
+            # 'strobe_enabled': self.var_strobe_check.get() == 1,
+            # 'strobe_duration_ms': self.slider_strobe_dur.get(),
+            # 'strobe_offset_us': self.slider_strobe_off.get(),
             'exposure_ms': self.slider_exposure.get(),
             'brightness': self.slider_bright.get(),
             'contrast': 50,  # 对比度固定为 50%（不增强），不保存用户设置
@@ -305,8 +305,8 @@ class SensorSettingsFrame(tk.Frame):
         trigger_mode = self.camera.get_trigger_mode()
         if trigger_mode == "internal":
             self.var_trig.set("internal")
-        elif trigger_mode == "hardware":
-            self.var_trig.set("hardware")
+        # elif trigger_mode == "hardware":
+        #     self.var_trig.set("hardware")
         elif trigger_mode == "software":
             self.var_trig.set("software")
         else:
@@ -399,15 +399,16 @@ class SensorSettingsFrame(tk.Frame):
         # 1. 应用触发模式
         trigger_mode = self.var_trig.get()
         interval_ms = self.slider_interval.get()
-        delay_ms = self.slider_delay.get() if self.var_delay_check.get() == 1 else 0
-        
+        # delay_ms = self.slider_delay.get() if self.var_delay_check.get() == 1 else 0
+        delay_ms = 0  # 直接设置为0，因为检测触发已移除
+
         print(f"\n📋 触发模式配置:")
         print(f"   模式: {trigger_mode}")
         if trigger_mode == "internal":
             print(f"   时间间隔: {interval_ms} ms")
             print(f"   拍摄频率: {1000.0/interval_ms:.2f} 帧/秒")
-        elif trigger_mode == "hardware":
-            print(f"   触发延时: {delay_ms} ms")
+        # elif trigger_mode == "hardware":
+            # print(f"   触发延时: {delay_ms} ms")
         
         if self.camera.set_trigger_mode(trigger_mode, interval_ms, delay_ms):
             print(f"✅ 触发模式已应用")
@@ -480,38 +481,38 @@ class SensorSettingsFrame(tk.Frame):
         if mode == "internal":
             # 内部定时: 间隔滑杆启用（紫色），延时滑杆禁用（灰色）
             self._enable_slider(self.slider_interval)
-            self._disable_slider(self.slider_delay)
-            self.cb_delay.config(state="disabled")
-            self.var_delay_check.set(0)  # 取消勾选
+            # self._disable_slider(self.slider_delay)
+            # self.cb_delay.config(state="disabled")
+            # self.var_delay_check.set(0)  # 取消勾选
             # 隐藏软件触发按钮
             self.btn_software_trigger.pack_forget()
             
-        elif mode == "hardware":
-            # 检测触发: 间隔滑杆禁用（灰色），延时滑杆启用（紫色）
-            self._disable_slider(self.slider_interval)
-            self._enable_slider(self.slider_delay)
-            self.cb_delay.config(state="normal")
-            # 隐藏软件触发按钮
-            self.btn_software_trigger.pack_forget()
+        # elif mode == "hardware":
+        #     # 检测触发: 间隔滑杆禁用（灰色），延时滑杆启用（紫色）
+        #     self._disable_slider(self.slider_interval)
+        #     self._enable_slider(self.slider_delay)
+        #     self.cb_delay.config(state="normal")
+        #     # 隐藏软件触发按钮
+        #     self.btn_software_trigger.pack_forget()
             
         else:  # software
             # 软件触发: 间隔和延时滑杆都禁用（灰色）
             self._disable_slider(self.slider_interval)
-            self._disable_slider(self.slider_delay)
-            self.cb_delay.config(state="disabled")
-            self.var_delay_check.set(0)  # 取消勾选
+            # self._disable_slider(self.slider_delay)
+            # self.cb_delay.config(state="disabled")
+            # self.var_delay_check.set(0)  # 取消勾选
             # 显示软件触发按钮
             self.btn_software_trigger.pack(fill=tk.X, pady=(10, 5), padx=5)
             
         # 2. ★★★ 频闪/输出脉冲 逻辑 ★★★
-        if self.var_strobe_check.get() == 1:
-            # 打钩了：启用滑块（紫色）
-            self._enable_slider(self.slider_strobe_dur)
-            self._enable_slider(self.slider_strobe_off)
-        else:
-            # 没打钩：禁用滑块（灰色）
-            self._disable_slider(self.slider_strobe_dur)
-            self._disable_slider(self.slider_strobe_off)
+        # if self.var_strobe_check.get() == 1:
+        #     # 打钩了：启用滑块（紫色）
+        #     self._enable_slider(self.slider_strobe_dur)
+        #     self._enable_slider(self.slider_strobe_off)
+        # else:
+        #     # 没打钩：禁用滑块（灰色）
+        #     self._disable_slider(self.slider_strobe_dur)
+        #     self._disable_slider(self.slider_strobe_off)
 
         # 3. 其他始终启用的滑块
         always_active = [

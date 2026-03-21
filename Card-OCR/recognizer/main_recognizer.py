@@ -253,7 +253,6 @@ class OCRApp:
         current_dir = os.path.dirname(os.path.abspath(__file__))
         parent_dir = os.path.dirname(current_dir)
         self.solutions_root = os.path.join(parent_dir, "solutions")
-
         self.recognizer = BankCardRecognizer()
         
         self.image_path = None

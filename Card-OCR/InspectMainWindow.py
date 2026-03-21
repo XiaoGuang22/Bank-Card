@@ -994,7 +994,7 @@ class CameraController:
                             break
                 
                 pass  # print removed
-            elif mode == "hardware":
+            # elif mode == "hardware":
                 # 检测触发模式（外部硬件触发）
                 pass  # print removed
                 pass  # print removed
@@ -1011,7 +1011,7 @@ class CameraController:
                             break
                     
                     # 设置触发延时
-                    if delay_ms > 0:
+                    # if delay_ms > 0:
                         delay_us = int(delay_ms * 1000)
                         self._set_feature("TriggerDelay", delay_us)
                     
