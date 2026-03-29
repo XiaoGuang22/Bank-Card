@@ -1384,9 +1384,17 @@ class CameraController:
 # 3. 主界面（保持不变）
 # ==============================================================================
 class InspectMainWindow:
-    def __init__(self, root):
+
+# ===================注释以下代码====================
+#      def __init__(self, root): 
+    def __init__(self, root, username, role):        #替换代码
         self.root = root
-        self.root.title("MINGSEN Express ")
+        #  self.root.title("MINGSEN Express ")
+        # =============新增================
+        self.username = username
+        self.role = role
+        self.root.title(f"MINGSEN Express - {username} ({role})")
+        # =========新增结束===========
         self.root.geometry("1280x800")
         
         # 配置样式
@@ -2179,6 +2187,7 @@ class InspectMainWindow:
         # 底部按钮
         tk.Frame(content, height=30, bg="white").pack()
         self._create_img_btn(content, "用户管理", self.icons['user'], side=tk.TOP)
+        self._create_img_btn(content, "退出登录", None, side=tk.TOP, command=self.logout)
         self._create_img_btn(content, "关闭", self.icons['close'], side=tk.BOTTOM, command=self.close_application)
     
     def close_application(self):
@@ -2201,6 +2210,53 @@ class InspectMainWindow:
             # 关闭窗口
             self.root.quit()
             pass  # print removed
+    
+
+    # ==========新增开始=============
+    def logout(self):
+        """退出登录"""
+        try:
+            # 停止视频循环
+            self.video_loop_running = False
+            if self.video_loop_id:
+                self.root.after_cancel(self.video_loop_id)
+            # 清理相机资源
+            if self.cam:
+                self.cam.cleanup()
+        except Exception as e:
+            pass
+        finally:
+            # 关闭当前窗口
+            self.root.destroy()
+            # 重新启动登录窗口
+            import tkinter as tk
+            from ui.LoginWindow import LoginWindow
+            
+            def login_success_callback(username, role):
+                """登录成功后的回调"""
+                root = tk.Tk()
+                app = InspectMainWindow(root, username, role)
+                
+                def on_closing():
+                    """关闭程序时的清理工作"""
+                    try:
+                        if hasattr(app, 'video_loop_running'):
+                            app.video_loop_running = False
+                        if hasattr(app, 'cam') and app.cam:
+                            app.cam.cleanup()
+                    except Exception as e:
+                        pass
+                    finally:
+                        root.destroy()
+                
+                root.protocol("WM_DELETE_WINDOW", on_closing)
+                root.mainloop()
+            
+            login_root = tk.Tk()
+            login_window = LoginWindow(login_root, login_success_callback)
+            login_root.mainloop()
+# ======================新增结束=============
+
     @ErrorHandler.handle_ui_error
     def show_sensor_settings(self):
         """显示传感器设置面板"""

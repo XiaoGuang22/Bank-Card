@@ -26,17 +26,24 @@ from InspectMainWindow import InspectMainWindow
 import tkinter as tk
 
 
-def main():
-    """主函数：创建并运行主窗口"""
-    print("="*60)
-    print("Bank Card OCR System - 银行卡识别系统")
-    print("="*60)
-    print("正在启动主界面...")
-    print()
+# def main():
+#     """主函数：创建并运行主窗口"""
+#     print("="*60)
+#     print("Bank Card OCR System - 银行卡识别系统")
+#     print("="*60)
+#     print("正在启动主界面...")
+#     print()
+#  =========替换代码======================
+def login_success(username, role):
+    """登录成功后的回调函数"""
+    print(f"✅ 登录成功: {username} ({role})")
+
+# =============替换结束======================
     
     # 创建主窗口
     root = tk.Tk()
-    app = InspectMainWindow(root)
+    #  app = InspectMainWindow(root)
+    app = InspectMainWindow(root, username, role)
     
     # 设置关闭事件处理
     def on_closing():
@@ -60,6 +67,28 @@ def main():
     
     # 启动主循环
     root.mainloop()
+
+
+#   ============新增登录窗口==================
+#   
+def main():
+    """主函数：创建并运行主窗口"""
+    print("="*60)
+    print("Bank Card OCR System - 银行卡识别系统")
+    print("="*60)
+    print("正在启动登录界面...")
+    print()
+    
+    # 导入登录窗口
+    from ui.LoginWindow import LoginWindow
+    
+    # 创建登录窗口
+    root = tk.Tk()
+    login_window = LoginWindow(root, login_success)
+    
+    # 启动登录窗口主循环
+    root.mainloop()
+# ===============新增结束==============================
 
 
 if __name__ == "__main__":
