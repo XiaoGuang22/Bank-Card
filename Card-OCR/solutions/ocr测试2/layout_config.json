@@ -1,0 +1,33 @@
+{
+    "fields": {
+        "CardNumber": [
+            222,
+            497,
+            1124,
+            131
+        ],
+        "Date": [
+            916,
+            647,
+            231,
+            86
+        ]
+    },
+    "image_size": {
+        "width": 1600,
+        "height": 1200
+    },
+    "strategy": "anchor_based",
+    "anchor_rect": [
+        264,
+        535,
+        45,
+        68
+    ],
+    "anchor_search_area": [
+        227,
+        419,
+        278,
+        251
+    ]
+}
