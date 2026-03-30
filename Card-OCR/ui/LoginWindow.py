@@ -32,18 +32,21 @@ class LoginWindow:
     # 使窗口在屏幕中央显示的方法
     def _center_window(self):
         """使窗口在屏幕中央显示"""
-        # 更新窗口状态，确保获取正确的窗口大小
-        self.root.update_idletasks()
-        # 获取窗口宽度
-        width = self.root.winfo_width()
-        # 获取窗口高度
-        height = self.root.winfo_height()
+        # 获取屏幕宽度和高度
+        screen_width = self.root.winfo_screenwidth()
+        screen_height = self.root.winfo_screenheight()
+        
+        # 窗口宽度和高度
+        window_width = 400
+        window_height = 350
+        
         # 计算窗口在屏幕上的X坐标（屏幕宽度的一半减去窗口宽度的一半）
-        x = (self.root.winfo_screenwidth() // 2) - (width // 2)
+        x = (screen_width // 2) - (window_width // 2)
         # 计算窗口在屏幕上的Y坐标（屏幕高度的一半减去窗口高度的一半）
-        y = (self.root.winfo_screenheight() // 2) - (height // 2)
-        # 设置窗口的位置和大小
-        self.root.geometry(f"{width}x{height}+{x}+{y}")
+        y = (screen_height // 2) - (window_height // 2)
+        
+        # 直接设置窗口的位置和大小，避免先显示在左上角
+        self.root.geometry(f"{window_width}x{window_height}+{x}+{y}")
     
     # 确保用户数据文件存在的方法
     def _ensure_user_file_exists(self):
