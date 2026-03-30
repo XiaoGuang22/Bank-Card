@@ -73,6 +73,18 @@ class UserManagementWindow:
         """对密码进行哈希处理"""
         return hashlib.md5(password.encode()).hexdigest()
     
+    def _show_error_and_lift(self, title, message):
+        """显示错误弹窗并在关闭后置顶窗口"""
+        messagebox.showerror(title, message, parent=self.window)
+        self.window.lift()
+        self.window.focus_force()
+    
+    def _show_info_and_lift(self, title, message):
+        """显示信息弹窗并在关闭后置顶窗口"""
+        messagebox.showinfo(title, message, parent=self.window)
+        self.window.lift()
+        self.window.focus_force()
+    
     def _create_ui(self):
         """创建用户管理界面"""
         # 主框架
@@ -139,7 +151,7 @@ class UserManagementWindow:
             for username, user_info in self.users.items():
                 self.tree.insert("", tk.END, values=(username, user_info["role"]))
         except Exception as e:
-            messagebox.showerror("错误", f"读取用户数据失败: {e}")
+            self._show_error_and_lift("错误", f"读取用户数据失败: {e}")
     
     def _add_user(self):
         """新增用户"""
@@ -197,11 +209,11 @@ class UserManagementWindow:
             role = role_var.get()
             
             if not username or not password:
-                messagebox.showerror("错误", "请输入用户名和密码")
+                self._show_error_and_lift("错误", "请输入用户名和密码")
                 return
             
             if username in self.users:
-                messagebox.showerror("错误", "用户名已存在")
+                self._show_error_and_lift("错误", "用户名已存在")
                 return
             
             # 添加新用户
@@ -214,11 +226,11 @@ class UserManagementWindow:
             try:
                 with open(self.user_file, 'w', encoding='utf-8') as f:
                     json.dump(self.users, f, ensure_ascii=False, indent=2)
-                messagebox.showinfo("成功", "用户添加成功")
+                self._show_info_and_lift("成功", "用户添加成功")
                 add_window.destroy()
                 self._load_users()
             except Exception as e:
-                messagebox.showerror("错误", f"保存用户数据失败: {e}")
+                self._show_error_and_lift("错误", f"保存用户数据失败: {e}")
         
         # 保存按钮
         save_button = ttk.Button(button_frame, text="保存", command=save_user)
@@ -233,7 +245,7 @@ class UserManagementWindow:
         # 获取选中的用户
         selected_item = self.tree.selection()
         if not selected_item:
-            messagebox.showinfo("提示", "请选择要修改的用户")
+            self._show_info_and_lift("提示", "请选择要修改的用户")
             return
         
         # 获取用户名
@@ -294,21 +306,29 @@ class UserManagementWindow:
             role = role_var.get()
             
             if not new_username:
-                messagebox.showerror("错误", "用户名不能为空")
+                self._show_error_and_lift("错误", "用户名不能为空")
                 return
             
             # 检查新用户名是否已存在（如果用户名发生变化）
             if new_username != username and new_username in self.users:
-                messagebox.showerror("错误", "用户名已存在")
+                self._show_error_and_lift("错误", "用户名已存在")
                 return
             
-            # 检查是否至少修改了一项（用户名或密码）
+            # 检查是否至少修改了一项（用户名、密码或角色）
             username_changed = (new_username != username)
             password_changed = bool(password)
+            role_changed = (role != self.users[username]["role"])
             
-            if not username_changed and not password_changed:
-                messagebox.showerror("错误", "至少需要修改用户名或密码中的一项")
+            if not username_changed and not password_changed and not role_changed:
+                self._show_error_and_lift("错误", "至少需要修改一项")
                 return
+            
+            # 如果角色改为管理员，检查是否已存在其他管理员
+            if role == "管理员":
+                for uname, uinfo in self.users.items():
+                    if uname != username and uinfo.get("role") == "管理员":
+                        self._show_error_and_lift("错误", "管理员已存在")
+                        return
             
             # 更新用户信息
             if new_username != username:
@@ -329,11 +349,11 @@ class UserManagementWindow:
             try:
                 with open(self.user_file, 'w', encoding='utf-8') as f:
                     json.dump(self.users, f, ensure_ascii=False, indent=2)
-                messagebox.showinfo("成功", "用户修改成功")
+                self._show_info_and_lift("成功", "用户修改成功")
                 edit_window.destroy()
                 self._load_users()
             except Exception as e:
-                messagebox.showerror("错误", f"保存用户数据失败: {e}")
+                self._show_error_and_lift("错误", f"保存用户数据失败: {e}")
         
         # 保存按钮
         save_button = ttk.Button(button_frame, text="保存", command=save_changes)
@@ -348,7 +368,7 @@ class UserManagementWindow:
         # 获取选中的用户
         selected_item = self.tree.selection()
         if not selected_item:
-            messagebox.showinfo("提示", "请选择要删除的用户")
+            self._show_info_and_lift("提示", "请选择要删除的用户")
             return
         
         # 获取用户名
@@ -357,11 +377,11 @@ class UserManagementWindow:
         
         # 检查是否是当前登录的管理员
         if username == self.current_username and self.current_role == "管理员":
-            messagebox.showerror("错误", "不能删除当前登录的管理员账号")
+            self._show_error_and_lift("错误", "不能删除当前登录的管理员账号")
             return
         
         # 确认删除
-        if messagebox.askyesno("确认", f"确定要删除用户 '{username}' 吗？"):
+        if messagebox.askyesno("确认", f"确定要删除用户 '{username}' 吗？", parent=self.window):
             # 删除用户
             del self.users[username]
             
@@ -369,10 +389,14 @@ class UserManagementWindow:
             try:
                 with open(self.user_file, 'w', encoding='utf-8') as f:
                     json.dump(self.users, f, ensure_ascii=False, indent=2)
-                messagebox.showinfo("成功", "用户删除成功")
+                self._show_info_and_lift("成功", "用户删除成功")
                 self._load_users()
             except Exception as e:
-                messagebox.showerror("错误", f"保存用户数据失败: {e}")
+                self._show_error_and_lift("错误", f"保存用户数据失败: {e}")
+            
+            # 置顶窗口
+            self.window.lift()
+            self.window.focus_force()
     
     def _close_window(self):
         """关闭窗口"""
