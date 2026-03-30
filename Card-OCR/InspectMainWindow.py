@@ -2186,7 +2186,8 @@ class InspectMainWindow:
 
         # 底部按钮
         tk.Frame(content, height=30, bg="white").pack()
-        self._create_img_btn(content, "用户管理", self.icons['user'], side=tk.TOP)
+    #    self._create_img_btn(content, "用户管理", self.icons['user'], side=tk.TOP)
+        self._create_img_btn(content, "用户管理", self.icons['user'], side=tk.TOP, command=self.show_user_management)
         self._create_img_btn(content, "退出登录", None, side=tk.TOP, command=self.logout)
         self._create_img_btn(content, "关闭", self.icons['close'], side=tk.BOTTOM, command=self.close_application)
     
@@ -2255,6 +2256,24 @@ class InspectMainWindow:
             login_root = tk.Tk()
             login_window = LoginWindow(login_root, login_success_callback)
             login_root.mainloop()
+    # ==========新增开始=============
+    def show_user_management(self):
+        """显示用户管理窗口"""
+        # 检查是否是管理员
+        if self.role != "管理员":
+            from tkinter import messagebox
+            messagebox.showinfo("提示", "只有管理员才能访问用户管理功能")
+            return
+        
+        # 导入用户管理窗口
+        from ui.UserManagementWindow import UserManagementWindow
+        
+        # 创建用户管理窗口
+        def on_user_management_close():
+            """用户管理窗口关闭后的回调"""
+            pass
+        
+        user_management_window = UserManagementWindow(self.root, self.username, self.role, on_user_management_close)
 # ======================新增结束=============
 
     @ErrorHandler.handle_ui_error

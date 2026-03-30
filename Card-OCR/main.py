@@ -37,8 +37,6 @@ import tkinter as tk
 def login_success(username, role):
     """登录成功后的回调函数"""
     print(f"✅ 登录成功: {username} ({role})")
-
-# =============替换结束======================
     
     # 创建主窗口
     root = tk.Tk()
