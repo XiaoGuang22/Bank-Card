@@ -849,7 +849,7 @@ class SolutionMakerFrame(tk.Frame):
         self.temp_layout_config = {}  # 同时清空临时布局
     
     def _create_field_selection(self):
-        """创建字段选择区域（字段类型下拉框 + 锚点复选框 + 新建/删除按钮）"""
+        """创建字段选择区域（字段类型图标网格 + 锚点复选框 + 新建/删除按钮）"""
         frame = tk.LabelFrame(
             self,
             text="字段标注",
@@ -872,17 +872,60 @@ class SolutionMakerFrame(tk.Frame):
             bg="#f0f0f0"
         ).pack(side=tk.LEFT, padx=(0, 5))
         
+        # ========== 原来的下拉框代码（已注释）==========
+        # self.var_field_type = tk.StringVar(value=self.field_types[0])
+        # self.combo_field = ttk.Combobox(
+        #     row1,
+        #     textvariable=self.var_field_type,
+        #     values=self.field_types,
+        #     state="readonly",
+        #     width=18,
+        #     font=("微软雅黑", 9)
+        # )
+        # self.combo_field.pack(side=tk.LEFT, fill=tk.X, expand=True)
+        # self.combo_field.bind("<<ComboboxSelected>>", lambda e: self._on_field_selected())
+        # ========== 原来的下拉框代码结束 ==========
+        
+        # 字段图标网格容器
+        icon_frame = tk.Frame(row1, bg="#f0f0f0")
+        icon_frame.pack(side=tk.LEFT, fill=tk.X, expand=True)
+        
+        # 创建2x2网格布局
         self.var_field_type = tk.StringVar(value=self.field_types[0])
-        self.combo_field = ttk.Combobox(
-            row1,
-            textvariable=self.var_field_type,
-            values=self.field_types,
-            state="readonly",
-            width=18,
-            font=("微软雅黑", 9)
-        )
-        self.combo_field.pack(side=tk.LEFT, fill=tk.X, expand=True)
-        self.combo_field.bind("<<ComboboxSelected>>", lambda e: self._on_field_selected())
+        
+        # 字段图标配置
+        field_icons = {
+            "CardNumber": {"text": "卡号", "color": "#ff0000"},
+            "Name": {"text": "姓名", "color": "#0000ff"},
+            "Date": {"text": "日期", "color": "#008000"},
+            "FirstDigitAnchor": {"text": "锚点", "color": "#ff00ff"}
+        }
+        
+        # 创建图标按钮
+        self.field_buttons = {}
+        for i, field_type in enumerate(self.field_types):
+            row = i // 2
+            col = i % 2
+            
+            # 创建长方形按钮
+            btn = tk.Button(
+                icon_frame,
+                text=field_icons[field_type]["text"],
+                font=("微软雅黑", 9),
+                bg=field_icons[field_type]["color"],
+                fg="white",
+                relief=tk.FLAT,
+                padx=10,
+                pady=5,
+                cursor="hand2",
+                command=lambda ft=field_type: self._select_field(ft)
+            )
+            btn.grid(row=row, column=col, padx=5, pady=5, sticky="ew")
+            self.field_buttons[field_type] = btn
+        
+        # 设置网格列权重，使按钮均匀分布
+        icon_frame.grid_columnconfigure(0, weight=1)
+        icon_frame.grid_columnconfigure(1, weight=1)
         
         # 第二行：锚点复选框
         row2 = tk.Frame(frame, bg="#f0f0f0")
@@ -934,6 +977,20 @@ class SolutionMakerFrame(tk.Frame):
         )
         btn_delete_field.pack(side=tk.LEFT, fill=tk.X, expand=True)
     
+    def _select_field(self, field_type):
+        """
+        选择字段类型
+        
+        参数:
+            field_type: 字段类型
+        """
+        self.var_field_type.set(field_type)
+        # 更新锚点复选框状态
+        if field_type == "FirstDigitAnchor":
+            self.var_is_anchor.set(True)
+        else:
+            self.var_is_anchor.set(False)
+    
     def _on_anchor_toggled(self):
         """
         锚点复选框切换事件
@@ -942,12 +999,14 @@ class SolutionMakerFrame(tk.Frame):
         """
         if self.var_is_anchor.get():
             # 勾选锚点，切换到FirstDigitAnchor
-            self.var_field_type.set("FirstDigitAnchor")
+            # self.var_field_type.set("FirstDigitAnchor")  # 已注释，改用_select_field
+            self._select_field("FirstDigitAnchor")
         else:
             # 取消锚点，恢复到第一个非锚点字段
             non_anchor_fields = [f for f in self.field_types if f != "FirstDigitAnchor"]
             if non_anchor_fields:
-                self.var_field_type.set(non_anchor_fields[0])
+                # self.var_field_type.set(non_anchor_fields[0])  # 已注释，改用_select_field
+                self._select_field(non_anchor_fields[0])
     
     def _create_tool_buttons(self):
         """创建工具按钮区域（打开图片、捕获画面、执行提取、保存全部、清空本次提取）"""
