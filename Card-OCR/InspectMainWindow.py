@@ -2171,23 +2171,43 @@ class InspectMainWindow:
         dual_pane.grid_columnconfigure(0, weight=1)
         dual_pane.grid_columnconfigure(1, weight=1)
 
-        # 左列按钮
+        # 左列按钮 - 所有角色都可见
         lf_run = ttk.LabelFrame(dual_pane, text="选择并运行", style="White.TLabelframe")
         lf_run.grid(row=0, column=0, sticky="nsew", padx=(0, 3))
         self._create_img_btn(lf_run, "解决方案", self.icons['folder'], command=self._show_solution_disabled_message)
         self._create_img_btn(lf_run, "运行", self.icons['run'], command=self.show_run_interface)
         
-        # 右列按钮
-        lf_mod = ttk.LabelFrame(dual_pane, text="选择或者修改", style="White.TLabelframe")
-        lf_mod.grid(row=0, column=1, sticky="nsew", padx=(3, 0))
-        self._create_img_btn(lf_mod, "传感器", self.icons['sensor'], command=self.show_sensor_settings)
-        self._create_img_btn(lf_mod, "工具", self.icons['tools'], command=self.show_tool_interface)
-        self._create_img_btn(lf_mod, "控制", self.icons['control'])
+        # ========== 权限控制修改开始 ==========
+        # 原代码（所有角色都显示右列按钮）：
+        # lf_mod = ttk.LabelFrame(dual_pane, text="选择或者修改", style="White.TLabelframe")
+        # lf_mod.grid(row=0, column=1, sticky="nsew", padx=(3, 0))
+        # self._create_img_btn(lf_mod, "传感器", self.icons['sensor'], command=self.show_sensor_settings)
+        # self._create_img_btn(lf_mod, "工具", self.icons['tools'], command=self.show_tool_interface)
+        # self._create_img_btn(lf_mod, "控制", self.icons['control'])
+        
+        # 新代码（根据角色控制显示）：
+        # 右列按钮 - 操作员不显示此列，管理员和技术员显示
+        if self.role in ["管理员", "技术员"]:
+            lf_mod = ttk.LabelFrame(dual_pane, text="选择或者修改", style="White.TLabelframe")
+            lf_mod.grid(row=0, column=1, sticky="nsew", padx=(3, 0))
+            self._create_img_btn(lf_mod, "传感器", self.icons['sensor'], command=self.show_sensor_settings)
+            self._create_img_btn(lf_mod, "工具", self.icons['tools'], command=self.show_tool_interface)
+            self._create_img_btn(lf_mod, "控制", self.icons['control'])
+        # ========== 权限控制修改结束 ==========
 
         # 底部按钮
         tk.Frame(content, height=30, bg="white").pack()
-    #    self._create_img_btn(content, "用户管理", self.icons['user'], side=tk.TOP)
-        self._create_img_btn(content, "用户管理", self.icons['user'], side=tk.TOP, command=self.show_user_management)
+        
+        # ========== 权限控制修改开始 ==========
+        # 原代码（所有角色都显示用户管理）：
+        # self._create_img_btn(content, "用户管理", self.icons['user'], side=tk.TOP, command=self.show_user_management)
+        
+        # 新代码（仅管理员显示用户管理）：
+        if self.role == "管理员":
+            self._create_img_btn(content, "用户管理", self.icons['user'], side=tk.TOP, command=self.show_user_management)
+        # ========== 权限控制修改结束 ==========
+        
+        # 退出登录和关闭 - 所有角色都可见
         self._create_img_btn(content, "退出登录", None, side=tk.TOP, command=self.logout)
         self._create_img_btn(content, "关闭", self.icons['close'], side=tk.BOTTOM, command=self.close_application)
     
@@ -2258,12 +2278,26 @@ class InspectMainWindow:
             login_root.mainloop()
     # ==========新增开始=============
     def show_user_management(self):
-        """显示用户管理窗口"""
-        # 检查是否是管理员
-        if self.role != "管理员":
-            from tkinter import messagebox
-            messagebox.showinfo("提示", "只有管理员才能访问用户管理功能")
-            return
+        """显示用户管理窗口（仅管理员可访问）"""
+        # ========== 权限控制修改开始 ==========
+        # 原代码（在方法内检查权限）：
+        # if self.role != "管理员":
+        #     from tkinter import messagebox
+        #     messagebox.showinfo("提示", "只有管理员才能访问用户管理功能")
+        #     return
+        
+        # 新代码：权限检查已通过UI按钮显示控制，此处保留检查作为双重保险（已注释）
+        # ========== 权限控制修改结束 ==========
+        
+        # 如果用户管理窗口已经打开，直接置顶显示
+        if hasattr(self, 'user_management_window') and self.user_management_window:
+            try:
+                self.user_management_window.window.lift()
+                self.user_management_window.window.focus_force()
+                return
+            except:
+                # 窗口已关闭，清除引用
+                self.user_management_window = None
         
         # 导入用户管理窗口
         from ui.UserManagementWindow import UserManagementWindow
@@ -2271,14 +2305,22 @@ class InspectMainWindow:
         # 创建用户管理窗口
         def on_user_management_close():
             """用户管理窗口关闭后的回调"""
-            pass
+            self.user_management_window = None
         
-        user_management_window = UserManagementWindow(self.root, self.username, self.role, on_user_management_close)
+        self.user_management_window = UserManagementWindow(self.root, self.username, self.role, on_user_management_close)
 # ======================新增结束=============
 
     @ErrorHandler.handle_ui_error
     def show_sensor_settings(self):
-        """显示传感器设置面板"""
+        """显示传感器设置面板（管理员和技术员可访问）"""
+        # ========== 权限控制修改开始 ==========
+        # 新增：操作员权限检查
+        if self.role == "操作员":
+            from tkinter import messagebox
+            messagebox.showinfo("提示", "操作员无权访问传感器设置")
+            return
+        # ========== 权限控制修改结束 ==========
+        
         # 0. 先清除解决方案管理面板（如果存在）
         if self.solution_panel is not None:
             pass  # print removed
@@ -2397,7 +2439,15 @@ class InspectMainWindow:
                 self._display_static_frame(raw_img)
     @ErrorHandler.handle_ui_error
     def show_tool_interface(self):
-        """显示工具界面"""
+        """显示工具界面（管理员和技术员可访问）"""
+        # ========== 权限控制修改开始 ==========
+        # 新增：操作员权限检查
+        if self.role == "操作员":
+            from tkinter import messagebox
+            messagebox.showinfo("提示", "操作员无权访问工具配置")
+            return
+        # ========== 权限控制修改结束 ==========
+        
         # ★★★ 步骤1: 保存当前画布状态（拍快照）★★★
         # 获取当前画布上的图像（优先获取主界面的真实状态）
         current_image = None
