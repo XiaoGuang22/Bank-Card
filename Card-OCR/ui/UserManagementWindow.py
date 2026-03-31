@@ -4,6 +4,16 @@ import json
 import os
 import hashlib
 
+try:
+    from managers.audit_log_manager import AuditLogManager as _AuditLogManager
+except ImportError:
+    try:
+        import sys
+        sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+        from managers.audit_log_manager import AuditLogManager as _AuditLogManager
+    except ImportError:
+        _AuditLogManager = None
+
 class UserManagementWindow:
     def __init__(self, root, current_username, current_role, on_close):
         """初始化用户管理窗口
@@ -227,6 +237,7 @@ class UserManagementWindow:
                 with open(self.user_file, 'w', encoding='utf-8') as f:
                     json.dump(self.users, f, ensure_ascii=False, indent=2)
                 self._show_info_and_lift("成功", "用户添加成功")
+                self._audit("add_user", target=username, new_value=role)
                 add_window.destroy()
                 self._load_users()
             except Exception as e:
@@ -350,6 +361,13 @@ class UserManagementWindow:
                 with open(self.user_file, 'w', encoding='utf-8') as f:
                     json.dump(self.users, f, ensure_ascii=False, indent=2)
                 self._show_info_and_lift("成功", "用户修改成功")
+                # 记录修改日志
+                if role_changed:
+                    self._audit("modify_role", target=new_username,
+                                old_value=self.users.get(username, {}).get("role", ""),
+                                new_value=role)
+                if password_changed:
+                    self._audit("modify_password", target=new_username)
                 edit_window.destroy()
                 self._load_users()
             except Exception as e:
@@ -390,6 +408,7 @@ class UserManagementWindow:
                 with open(self.user_file, 'w', encoding='utf-8') as f:
                     json.dump(self.users, f, ensure_ascii=False, indent=2)
                 self._show_info_and_lift("成功", "用户删除成功")
+                self._audit("delete_user", target=username)
                 self._load_users()
             except Exception as e:
                 self._show_error_and_lift("错误", f"保存用户数据失败: {e}")
@@ -403,3 +422,20 @@ class UserManagementWindow:
         self.window.destroy()
         if self.on_close:
             self.on_close()
+
+    def _audit(self, action, target="", old_value="", new_value="", result="成功"):
+        """写入用户管理操作日志"""
+        if _AuditLogManager:
+            try:
+                _AuditLogManager().log(
+                    user_name=self.current_username,
+                    user_role=self.current_role,
+                    operation_type="user_management",
+                    operation_action=action,
+                    target_object=target,
+                    old_value=old_value,
+                    new_value=new_value,
+                    operation_result=result,
+                )
+            except Exception:
+                pass

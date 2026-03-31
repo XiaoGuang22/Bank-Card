@@ -419,6 +419,12 @@ class SolutionMakerFrame(tk.Frame):
         self.var_solution_name.set(solution_name)
         self.current_solution_name = solution_name
         self.on_solution_selected()
+        # 记录新建解决方案日志
+        if self.main_window and hasattr(self.main_window, '_audit'):
+            self.main_window._audit(
+                "template_operation", "new_solution",
+                target_object=solution_name
+            )
 
     @ErrorHandler.handle_file_error
     def _create_solution_directories(self, solution_path):
@@ -3517,6 +3523,12 @@ class SolutionMakerFrame(tk.Frame):
         if self.main_window and hasattr(self.main_window, 'save_ocr_state'):
             self.main_window.save_ocr_state()
             pass  # print removed
+        # 记录保存解决方案日志
+        if self.main_window and hasattr(self.main_window, '_audit'):
+            self.main_window._audit(
+                "template_operation", "save_solution",
+                target_object=self.current_solution_name or ""
+            )
         # 清空编辑器（保留捕获的图像）
         pass  # print removed
         self._clear_editor(keep_captured_image=True)

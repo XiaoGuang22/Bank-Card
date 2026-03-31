@@ -28,6 +28,14 @@ try:
 except ImportError:
     from SolutionMakerFrame import SolutionMakerFrame
 
+# ★★★ 导入操作日志面板 ★★★
+try:
+    from ui.AuditLogPanel import AuditLogPanel
+    from managers.audit_log_manager import AuditLogManager
+except ImportError:
+    AuditLogPanel = None
+    AuditLogManager = None
+
 # ★★★ 导入异常处理工具 ★★★
 try:
     from utils.exception_utils import ErrorHandler, safe_call, safe_execute, suppress_errors
@@ -1447,9 +1455,15 @@ class InspectMainWindow:
             'has_state': False       # 是否有保存的状态
         }
         
+        # 操作日志面板引用（在 _create_layout 中创建）
+        self.audit_log_panel = None
+
         # 创建布局
         self._create_layout()
-        
+
+        # 记录登录日志
+        self._audit("login", "login_success", operation_result="成功")
+
         # 绑定窗口状态改变事件（监听最大化/还原）
         self.root.bind("<Configure>", self._on_window_configure)
         
@@ -1528,9 +1542,9 @@ class InspectMainWindow:
             # 获取垂直分割窗口的总高度
             total_height = self.vertical_paned.winfo_height()
             if total_height > 100:
-                # 设置预览区域占70%，字符模板区域占30%
-                sash_position = int(total_height * 0.70)
-                self.vertical_paned.sash_place(0, 0, sash_position)
+                # 预览区域占65%，日志面板占35%
+                sash0 = int(total_height * 0.65)
+                self.vertical_paned.sash_place(0, 0, sash0)
         except Exception as e:
             pass
 
@@ -1932,8 +1946,21 @@ class InspectMainWindow:
         self.template_canvas.bind_all("<MouseWheel>", _on_mousewheel)
         self.template_scroll_frame.bind_all("<MouseWheel>", _on_mousewheel)
 
+        # 默认隐藏字符模板画布（日志面板会占满此区域；工具界面使用时再显示）
+        template_scrollbar.pack_forget()
+        self.template_canvas.pack_forget()
+
         # 保留原有的canvas引用（用于ROI标注）
         self.canvas = self.preview_canvas
+
+        # 操作日志面板：直接放入 template_frame，占满摄像头下方整块区域
+        if AuditLogPanel is not None:
+            self.audit_log_panel = AuditLogPanel(
+                self.template_frame,
+                viewer_name=self.username,
+                viewer_role=self.role,
+            )
+            self.audit_log_panel.frame.pack(fill=tk.BOTH, expand=True)
     
     def _add_tooltip(self, widget, text):
         """添加工具提示"""
@@ -2210,6 +2237,46 @@ class InspectMainWindow:
         # 退出登录和关闭 - 所有角色都可见
         self._create_img_btn(content, "退出登录", None, side=tk.TOP, command=self.logout)
         self._create_img_btn(content, "关闭", self.icons['close'], side=tk.BOTTOM, command=self.close_application)
+
+    # ------------------------------------------------------------------
+    # 操作日志辅助方法
+    # ------------------------------------------------------------------
+    def _audit(
+        self,
+        operation_type: str,
+        operation_action: str,
+        target_object: str = "",
+        old_value: str = "",
+        new_value: str = "",
+        operation_result: str = "成功",
+    ):
+        """向操作日志面板写入一条记录（线程安全）"""
+        try:
+            if self.audit_log_panel is not None:
+                self.audit_log_panel.append_log(
+                    user_name=self.username,
+                    user_role=self.role,
+                    operation_type=operation_type,
+                    operation_action=operation_action,
+                    target_object=target_object,
+                    old_value=old_value,
+                    new_value=new_value,
+                    operation_result=operation_result,
+                )
+            elif AuditLogManager is not None:
+                # 面板尚未创建时直接写库
+                AuditLogManager().log(
+                    user_name=self.username,
+                    user_role=self.role,
+                    operation_type=operation_type,
+                    operation_action=operation_action,
+                    target_object=target_object,
+                    old_value=old_value,
+                    new_value=new_value,
+                    operation_result=operation_result,
+                )
+        except Exception:
+            pass
     
     def close_application(self):
         """关闭应用程序（正确清理资源）"""
@@ -2237,6 +2304,8 @@ class InspectMainWindow:
     def logout(self):
         """退出登录"""
         try:
+            # 记录退出日志
+            self._audit("login", "logout")
             # 停止视频循环
             self.video_loop_running = False
             if self.video_loop_id:
@@ -2308,6 +2377,7 @@ class InspectMainWindow:
             self.user_management_window = None
         
         self.user_management_window = UserManagementWindow(self.root, self.username, self.role, on_user_management_close)
+        self._audit("user_management", "add_user", target_object="用户管理面板")
 # ======================新增结束=============
 
     @ErrorHandler.handle_ui_error
@@ -2320,6 +2390,8 @@ class InspectMainWindow:
             messagebox.showinfo("提示", "操作员无权访问传感器设置")
             return
         # ========== 权限控制修改结束 ==========
+
+        self._audit("camera_settings", "modify_trigger_source", target_object="传感器设置面板")
         
         # 0. 先清除解决方案管理面板（如果存在）
         if self.solution_panel is not None:
@@ -2447,6 +2519,8 @@ class InspectMainWindow:
             messagebox.showinfo("提示", "操作员无权访问工具配置")
             return
         # ========== 权限控制修改结束 ==========
+
+        self._audit("tool_settings", "modify_ocr_region", target_object="工具配置面板")
         
         # ★★★ 步骤1: 保存当前画布状态（拍快照）★★★
         # 获取当前画布上的图像（优先获取主界面的真实状态）
@@ -2503,6 +2577,11 @@ class InspectMainWindow:
         if hasattr(self, 'template_scroll_frame'):
             for widget in self.template_scroll_frame.winfo_children():
                 widget.pack_forget()
+
+        # 隐藏日志面板，显示字符模板画布（工具界面需要使用）
+        if self.audit_log_panel is not None:
+            self.audit_log_panel.frame.pack_forget()
+        self.template_canvas.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
         
         # 清空侧边栏
         self.clear_sidebar()
@@ -2573,6 +2652,11 @@ class InspectMainWindow:
         # 恢复主菜单
         self.show_main_menu()
         
+        # 退出工具界面后恢复日志面板，隐藏字符模板画布
+        self.template_canvas.pack_forget()
+        if self.audit_log_panel is not None:
+            self.audit_log_panel.frame.pack(fill=tk.BOTH, expand=True)
+
         # 重置状态
         self.before_tool_canvas_state = {
             'image': None,
@@ -2641,7 +2725,9 @@ class InspectMainWindow:
         except ImportError:
             from SolutionManagementPanel import SolutionManagementPanel
         
-        # 1. 隐藏字符模板区域（使用 pack_forget）
+        # 1. 隐藏日志面板和字符模板区域
+        if self.audit_log_panel is not None:
+            self.audit_log_panel.frame.pack_forget()
         self.template_canvas.pack_forget()
         
         # 2. 在 template_frame 中创建解决方案管理面板（覆盖显示）
@@ -2654,7 +2740,7 @@ class InspectMainWindow:
         
         pass  # print removed
     def _hide_solution_panel(self):
-        """隐藏解决方案管理面板，恢复字符模板区域（覆盖模式）"""
+        """隐藏解决方案管理面板，恢复日志面板（覆盖模式）"""
         if self.solution_panel is None:
             return  # 已经隐藏
         
@@ -2663,13 +2749,15 @@ class InspectMainWindow:
         self.solution_panel.destroy()
         self.solution_panel = None
         
-        # 2. 恢复字符模板区域的显示
-        self.template_canvas.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        # 2. 恢复日志面板（不恢复 template_canvas，日志面板占满此区域）
+        if self.audit_log_panel is not None:
+            self.audit_log_panel.frame.pack(fill=tk.BOTH, expand=True)
         
         pass  # print removed
     def _on_solution_panel_selected(self, solution_name):
         """解决方案面板选择回调"""
         print(f"🔄 [DEBUG] _on_solution_panel_selected 被调用: {solution_name}")
+        self._audit("template_operation", "load_solution", target_object=solution_name)
         
         # 1. 加载方案的布局配置
         solution_path = os.path.join("solutions", solution_name)
@@ -3443,9 +3531,11 @@ class InspectMainWindow:
                 on_back_callback=self.on_run_interface_back,
                 main_window=self  # 传递主窗口引用
             )
+            self._audit("inspection_control", "start_inspection")
             pass  # print removed
             pass
         except Exception as e:
+            self._audit("inspection_control", "start_inspection", operation_result="失败")
             pass
             # 返回主菜单
             self.show_main_menu()
@@ -3453,6 +3543,7 @@ class InspectMainWindow:
     def on_run_interface_back(self):
         """从运行界面返回主菜单"""
         pass  # print removed
+        self._audit("inspection_control", "stop_inspection")
         # 清理运行界面
         if hasattr(self, 'run_interface') and self.run_interface:
             # 停止检测（如果正在运行）

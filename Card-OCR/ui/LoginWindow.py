@@ -5,6 +5,16 @@ import json  # 导入json库，用于读写JSON格式的文件
 import os  # 导入os库，用于文件路径操作
 import hashlib  # 导入hashlib库，用于对密码进行哈希处理
 
+try:
+    from managers.audit_log_manager import AuditLogManager as _AuditLogManager
+except ImportError:
+    try:
+        import sys
+        sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+        from managers.audit_log_manager import AuditLogManager as _AuditLogManager
+    except ImportError:
+        _AuditLogManager = None
+
 # 定义登录窗口类
 class LoginWindow:
     # 初始化函数，创建登录窗口时会自动调用
@@ -155,6 +165,13 @@ class LoginWindow:
         
         # 验证用户名是否存在
         if username not in users:
+            # 记录登录失败日志
+            if _AuditLogManager:
+                try:
+                    _AuditLogManager().log(username, "未知", "login", "login_failed",
+                                           target_object="用户名不存在", operation_result="失败")
+                except Exception:
+                    pass
             # 显示错误消息
             messagebox.showerror("错误", "用户名不存在")
             # 终止登录流程
@@ -164,6 +181,14 @@ class LoginWindow:
         hashed_password = self._hash_password(password)
         # 比较密码哈希值是否匹配
         if users[username]["password"] != hashed_password:
+            # 记录登录失败日志
+            if _AuditLogManager:
+                try:
+                    role = users[username].get("role", "未知")
+                    _AuditLogManager().log(username, role, "login", "login_failed",
+                                           target_object="密码错误", operation_result="失败")
+                except Exception:
+                    pass
             # 显示错误消息
             messagebox.showerror("错误", "密码错误")
             # 终止登录流程
@@ -171,6 +196,13 @@ class LoginWindow:
         
         # 登录成功，获取用户角色
         user_role = users[username]["role"]
+        # 记录登录成功日志
+        if _AuditLogManager:
+            try:
+                _AuditLogManager().log(username, user_role, "login", "login_success",
+                                       operation_result="成功")
+            except Exception:
+                pass
         # 关闭登录窗口
         self.root.destroy()
         # 调用登录成功回调函数，传递用户名和角色
